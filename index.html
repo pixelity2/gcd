@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rudieta Tools — GCD (Euclid)</title>
+  <meta name="color-scheme" content="dark light" />
+
+  <style>
+    :root{
+      --bg: #071826;
+      --panel: #0b1220;
+      --glass: rgba(255,255,255,0.03);
+      --muted: #9aa4b2;
+      --fg: #e6edf3;
+      --accent: #06b6d4;
+      --accent-2:#06b67d;
+      --danger: #ef4444;
+      --card-radius: 14px;
+      --content: 1100px;
+      --gap: 16px;
+      --shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box }
+    html,body { height:100% }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(6,182,212,.18), transparent 60%),
+                  radial-gradient(900px 500px at 90% 0%, rgba(6,182,125,.12), transparent 70%),
+                  var(--bg);
+      color: var(--fg);
+      line-height: 1.5;
+    }
+
+    /* Layout */
+    .wrap{ max-width: var(--content); margin: 0 auto; padding: 24px; }
+    header{
+      position: sticky; top:0; z-index: 10;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(10,18,32,.8), rgba(10,18,32,.35));
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 14px 24px; max-width: var(--content); margin: 0 auto;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight: 700; letter-spacing:.2px }
+    .brand-badge{
+      width:30px; height:30px; border-radius:10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset;
+    }
+
+    main{ padding: 26px 0 40px }
+    .grid{ display:grid; grid-template-columns: 1fr; gap: var(--gap); }
+    @media (min-width: 860px){ .grid{ grid-template-columns: 420px 1fr; } }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+    }
+    .card .card-body{ padding: 18px; }
+    .card h2{ margin: 0 0 8px; font-size: 1.05rem; letter-spacing:.2px }
+    .muted{ color: var(--muted) }
+    .hero{
+      padding: 16px 18px;
+      border-radius: var(--card-radius);
+      border: 1px solid rgba(255,255,255,.06);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      margin-bottom: var(--gap);
+    }
+    .hero h1{ margin: 0 0 6px; font-size: clamp(1.1rem, 1.6rem, 1.8rem) }
+    .hero p{ margin: 0; color: var(--muted) }
+
+    /* Form */
+    .form-row{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .field{ display:flex; flex-direction: column; gap: 6px; }
+    label{ font-size:.9rem; color: var(--muted) }
+    input[type="text"], input[type="number"]{
+      width:100%; padding: 12px 12px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(2,6,23,.45);
+      color: var(--fg); outline: none;
+    }
+    input::placeholder{ color: #657080 }
+    .row-actions{ display:flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+    .btn{
+      appearance:none; border:0; cursor:pointer;
+      padding: 10px 14px; border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      color: var(--fg);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: .15s transform ease, .2s background ease, .2s border-color ease;
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn.primary{
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: rgba(255,255,255,.18);
+      font-weight: 600;
+    }
+    .btn.secondary{ background: rgba(255,255,255,.06); }
+    .btn.ghost{ background: transparent; border-color: rgba(255,255,255,.12) }
+    .btn.small{ padding:8px 10px; border-radius: 8px; font-size:.9rem }
+    .btn.danger{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.18) }
+
+    .chips{ display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px }
+    .chip{
+      padding: 6px 10px; font-size:.9rem;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 999px; cursor: pointer;
+    }
+
+    /* Steps table */
+    .steps-wrap{ overflow:auto; border-radius: 12px; border:1px solid rgba(255,255,255,.08) }
+    table{ width:100%; border-collapse: collapse; min-width: 520px; }
+    thead th{
+      text-align:left; font-weight:600; font-size:.9rem; color: #c9d4e1;
+      background: rgba(255,255,255,.04);
+    }
+    th, td{ padding: 10px 12px; border-bottom:1px solid rgba(255,255,255,.06) }
+    tbody tr:last-child td{ border-bottom: none }
+    tbody tr:nth-child(odd){ background: rgba(255,255,255,.02) }
+
+    .formula{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size:.95rem; padding: 8px 10px; border-radius: 8px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      display:inline-block;
+    }
+
+    .result-box{
+      display:flex; align-items:center; gap: 12px; flex-wrap: wrap;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(6,182,125,.12);
+    }
+
+    .error{ color: #fecaca; background: rgba(239,68,68,.15);
+      border: 1px solid rgba(239,68,68,.4); padding: 8px 10px; border-radius: 8px; }
+
+    /* Footer */
+    footer{ margin-top: 26px; padding: 16px 0 40px; color: var(--muted); }
+    .footer-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
+    a{ color:#7dd3fc; text-decoration: none }
+    a:hover{ text-decoration: underline }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true"></div>
+        <div>Rudieta Tools</div>
+      </div>
+      <div class="muted">GCD by Euclidean Algorithm</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <section class="hero">
+        <h1>Greatest Common Divisor — Euclid</h1>
+        <p>Enter two integers. We’ll run Euclid’s algorithm and show each step: <span class="formula">a = q·b + r</span>.</p>
+      </section>
+
+      <div class="grid">
+        <!-- Left: Form -->
+        <div class="card">
+          <div class="card-body">
+            <h2>Input</h2>
+            <div class="muted">We accept big integers (uses BigInt). Negatives are ok — we use absolute values.</div>
+
+            <div class="form-row" style="margin-top:12px">
+              <div class="field">
+                <label for="a">a</label>
+                <input id="a" type="text" inputmode="numeric" placeholder="e.g. 1071" />
+              </div>
+              <div class="field">
+                <label for="b">b</label>
+                <input id="b" type="text" inputmode="numeric" placeholder="e.g. 462" />
+              </div>
+            </div>
+
+            <div class="row-actions">
+              <button class="btn primary" id="runBtn">Compute GCD</button>
+              <button class="btn secondary" id="swapBtn" title="Swap a and b">Swap</button>
+              <button class="btn ghost" id="clearBtn">Clear</button>
+            </div>
+
+            <div class="chips" id="examples">
+              <div class="chip" data-a="1071" data-b="462">Example 1071 & 462 (gcd=21)</div>
+              <div class="chip" data-a="48" data-b="18">Example 48 & 18 (gcd=6)</div>
+              <div class="chip" data-a="270" data-b="192">Example 270 & 192 (gcd=6)</div>
+              <div class="chip" data-a="1234567890123456" data-b="9876543210">BigInt demo</div>
+            </div>
+
+            <div id="msg" style="margin-top:12px"></div>
+          </div>
+        </div>
+
+        <!-- Right: Results -->
+        <div class="card" id="resultsCard" style="display:none">
+          <div class="card-body">
+            <h2>Result</h2>
+            <div class="result-box" id="resultBox" style="margin:10px 0 12px"></div>
+
+            <div class="row-actions" style="margin: 8px 0 14px">
+              <button class="btn small" id="copyBtn" title="Copy steps as plain text">Copy steps</button>
+              <button class="btn small" id="csvBtn" title="Download steps as CSV">Download CSV</button>
+            </div>
+
+            <div class="steps-wrap">
+              <table id="stepsTable" aria-label="Euclidean steps table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>a</th>
+                    <th>b</th>
+                    <th>q = ⌊a/b⌋</th>
+                    <th>r = a − q·b</th>
+                    <th>Formula</th>
+                  </tr>
+                </thead>
+                <tbody id="stepsBody"></tbody>
+              </table>
+            </div>
+
+            <p class="muted" style="margin-top:10px">
+              We stop when the remainder <span class="formula">r</span> becomes 0. The last non-zero <span class="formula">b</span> is the gcd.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <div class="footer-grid">
+          <div>
+            <div><strong>Rudieta eShop</strong> — Rudieta eServices L.L.C.</div>
+            <div>Business no.: <strong>812310431</strong></div>
+            <div>VAT no.: <strong>330656647</strong></div>
+          </div>
+          <div>
+            <div>Support: <a href="mailto:support@rudieta.com">support@rudieta.com</a></div>
+            <div>Discord: <a href="https://discord.gg/wFYZfy62VQ" target="_blank">discord.gg/wFYZfy62VQ</a></div>
+            <div>Instagram: <a href="https://instagram.com/rudieta__/" target="_blank">@rudieta__/</a></div>
+          </div>
+          <div>
+            <div><a href="#">Terms</a> · <a href="#">Privacy</a></div>
+            <div class="muted">© <span id="y"></span> Rudieta</div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    // Utilities ---------------------------------------------------------------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+    const aEl = $('#a');
+    const bEl = $('#b');
+    const runBtn = $('#runBtn');
+    const swapBtn = $('#swapBtn');
+    const clearBtn = $('#clearBtn');
+    const msg = $('#msg');
+    const resultsCard = $('#resultsCard');
+    const stepsBody = $('#stepsBody');
+    const resultBox = $('#resultBox');
+    const copyBtn = $('#copyBtn');
+    const csvBtn = $('#csvBtn');
+
+    $('#y').textContent = new Date().getFullYear();
+
+    function parseBigInt(input){
+      if (typeof input !== 'string') input = String(input ?? '');
+      input = input.trim().replace(/\s+/g,''); // remove spaces
+      // allow leading + or -
+      if (!/^[+-]?\d+$/.test(input)) return null;
+      try { return BigInt(input); } catch { return null; }
+    }
+
+    function absBig(x){ return x < 0n ? -x : x }
+
+    function euclidSteps(a, b){
+      // Returns array of {a,b,q,r,formula}
+      const out = [];
+      a = absBig(a);
+      b = absBig(b);
+
+      // Edge cases
+      if (a === 0n && b === 0n){
+        out.push({ a:0n, b:0n, q:0n, r:0n, formula: 'gcd(0,0) is 0 by convention' });
+        return out;
+      }
+      if (b === 0n){
+        out.push({ a, b:0n, q:0n, r:0n, formula: `gcd = ${a.toString()}` });
+        return out;
+      }
+
+      while (b !== 0n){
+        const q = a / b;          // BigInt division truncates toward 0 (ok for positive)
+        const r = a % b;
+        out.push({
+          a, b, q, r,
+          formula: `${a} = ${q}·${b} + ${r}`
+        });
+        a = b;
+        b = r;
+      }
+      return out;
+    }
+
+    function renderResult(steps){
+      stepsBody.innerHTML = '';
+      if (!steps || !steps.length){
+        resultsCard.style.display = 'none';
+        return;
+      }
+      const last = steps[steps.length - 1];
+      const gcd = last.r === 0n ? last.b : (steps.length === 1 ? last.a : last.b);
+
+      // steps table
+      steps.forEach((s, i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${s.a}</td>
+          <td>${s.b}</td>
+          <td>${s.q}</td>
+          <td>${s.r}</td>
+          <td><span class="formula">${s.formula}</span></td>
+        `;
+        stepsBody.appendChild(tr);
+      });
+
+      // summary box
+      resultBox.innerHTML = `
+        <strong>gcd</strong>(a,b) = <strong>${gcd}</strong>
+        <span class="muted">• ${steps.length} step${steps.length>1?'s':''}</span>
+      `;
+
+      resultsCard.style.display = '';
+    }
+
+    function compute(){
+      msg.innerHTML = '';
+      const a = parseBigInt(aEl.value);
+      const b = parseBigInt(bEl.value);
+      if (a === null || b === null){
+        msg.innerHTML = `<div class="error">Please enter whole integers (e.g. 1071 and 462).</div>`;
+        resultsCard.style.display = 'none';
+        return;
+      }
+      const steps = euclidSteps(a, b);
+      renderResult(steps);
+      // Store steps on window for copy/csv
+      window.__lastSteps = steps;
+    }
+
+    // Events -----------------------------------------------------------------
+    runBtn.addEventListener('click', compute);
+    [aEl, bEl].forEach(el => el.addEventListener('keydown', e=>{
+      if (e.key === 'Enter') compute();
+    }));
+
+    swapBtn.addEventListener('click', ()=>{
+      const tmp = aEl.value; aEl.value = bEl.value; bEl.value = tmp;
+    });
+
+    clearBtn.addEventListener('click', ()=>{
+      aEl.value = ''; bEl.value = '';
+      resultsCard.style.display = 'none';
+      msg.innerHTML = '';
+      aEl.focus();
+    });
+
+    // Example chips
+    $('#examples').addEventListener('click', (e)=>{
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      aEl.value = chip.dataset.a || '';
+      bEl.value = chip.dataset.b || '';
+      compute();
+    });
+
+    // Copy steps as plain text
+    copyBtn.addEventListener('click', async ()=>{
+      const steps = window.__lastSteps || [];
+      if (!steps.length) return;
+      const lines = steps.map((s,i)=> `${String(i+1).padStart(2,'0')}) ${s.formula}`);
+      const last = steps[steps.length - 1];
+      const gcd = last.r === 0n ? last.b : last.b;
+      lines.push(`gcd = ${gcd}`);
+      try{
+        await navigator.clipboard.writeText(lines.join('\n'));
+        copyBtn.textContent = 'Copied!';
+        setTimeout(()=> copyBtn.textContent='Copy steps', 1200);
+      }catch{
+        alert('Could not copy. Your browser blocked it.');
+      }
+    });
+
+    // Download CSV
+    csvBtn.addEventListener('click', ()=>{
+      const steps = window.__lastSteps || [];
+      if (!steps.length) return;
+      const rows = [['step','a','b','q','r','formula'], ...steps.map((s,i)=>[
+        i+1, s.a.toString(), s.b.toString(), s.q.toString(), s.r.toString(), s.formula
+      ])];
+      const csv = rows.map(r=> r.map(x=>{
+        const t = String(x).replace(/"/g,'""');
+        return /[",\n]/.test(t) ? `"${t}"` : t;
+      }).join(',')).join('\n');
+
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'gcd-euclid-steps.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // Prefill demo (nice first run)
+    aEl.value = '1071';
+    bEl.value = '462';
+    compute();
+  </script>
+</body>
+</html>
